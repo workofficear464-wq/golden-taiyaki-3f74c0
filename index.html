@@ -3,246 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaFix - Service Booking</title>
+    <title>InstaFix - Home</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { 
-            --primary-color: #bf6a1f; 
-            --bg-color: #f7f6f2; 
-            --white: #ffffff; 
-            --text-dark: #222222; 
-        }
+        :root { --primary-color: #bf6a1f; --bg-color: #f4f4f4; --white: #ffffff; --text-dark: #222222; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Devanagari', sans-serif; }
-        body { background-color: #ececec; display: flex; justify-content: center; }
-        
-        .app-container { 
-            width: 100%; 
-            max-width: 480px; 
-            background-color: var(--bg-color); 
-            min-height: 100vh; 
-            position: relative; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
-        }
-        
-        /* --- Professional Header (Image Based) --- */
-        header { 
-            background-color: var(--white); 
-            padding: 18px 24px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #e5e0d8;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        }
-        .logo-section { 
-            font-size: 24px; 
-            font-weight: 700; 
-            color: var(--text-dark);
-            letter-spacing: -0.5px;
-        }
-        .header-link {
-            color: #4a148c; /* प्रोफेशनल पर्पल लिंक कलर */
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 600;
-            border-bottom: 2px solid #4a148c;
-            padding-bottom: 2px;
-            transition: opacity 0.2s;
-        }
-        .header-link:hover { opacity: 0.8; }
-
-        /* --- Advanced Services Grid --- */
-        .services-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-            padding: 25px 20px; 
-        }
-        
-        .service-card { 
-            background: white; 
-            padding: 20px 10px; 
-            border-radius: 12px; 
-            text-align: center; 
-            border: 2px solid #e5e0d8; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        
-        /* Active (फर्नीचर) कार्ड का डिज़ाइन */
-        .service-card.active { 
-            border-color: var(--primary-color); 
-            background: #fdf3eb; 
-            box-shadow: 0 4px 12px rgba(191, 106, 31, 0.15);
-        }
-        
-        .service-card:hover:not(.disabled) {
-            border-color: var(--primary-color);
-            transform: translateY(-3px);
-        }
-        
-        .service-card i { 
-            font-size: 28px; 
-            display: block; 
-            margin-bottom: 8px; 
-        }
-        
-        .service-card .title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        /* Coming Soon (Disabled) कार्ड्स का डिज़ाइन */
-        .service-card.disabled {
-            cursor: not-allowed;
-            background-color: #f9f9f9;
-            opacity: 0.85;
-        }
-        
-        .coming-soon-badge {
-            position: absolute;
-            top: -10px;
-            right: -8px;
-            background-color: #e53935; /* लाल रंग */
-            color: white;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 4px 6px;
-            border-radius: 12px;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(229, 57, 53, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* --- Booking Form --- */
-        .booking-card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 25px 20px; 
-            margin: 0 15px 30px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
-            border: 1px solid #e5e0d8; 
-        }
-        .booking-card h2 { margin-bottom: 20px; font-size: 18px; color: var(--text-dark); }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-dark); }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; outline: none; transition: 0.3s; font-size: 14px;}
-        input:focus, select:focus, textarea:focus { border-color: var(--primary-color); background: white; }
-        .submit-btn { background-color: var(--primary-color); color: white; width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        .submit-btn:hover { background-color: #a35817; }
+        body { background-color: var(--bg-color); color: var(--text-dark); }
+        header { background-color: var(--white); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .logo-section { font-size: 24px; font-weight: 700; color: var(--primary-color); text-decoration: none; }
+        .header-links a { color: #4a148c; text-decoration: none; font-size: 15px; font-weight: 600; margin-left: 15px; transition: 0.3s; }
+        .header-links a:hover { color: var(--primary-color); }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; margin-top: 20px; }
+        .service-card { background: white; padding: 25px 15px; border-radius: 12px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .service-card:hover:not(.disabled) { border-color: var(--primary-color); transform: translateY(-5px); box-shadow: 0 6px 15px rgba(191, 106, 31, 0.15); }
+        .service-card i { font-size: 35px; display: block; margin-bottom: 12px; }
+        .service-card .title { font-size: 15px; font-weight: 600; }
+        .service-card.disabled { cursor: not-allowed; background-color: #f9f9f9; opacity: 0.7; }
+        .coming-soon-badge { position: absolute; top: -10px; right: -5px; background-color: #e53935; color: white; font-size: 10px; font-weight: 700; padding: 5px 8px; border-radius: 20px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-transform: uppercase; }
+        #loadingMsg { text-align: center; margin-top: 50px; font-weight: bold; color: #555; }
+        @media (min-width: 768px) { .services-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 30px; } .service-card { padding: 35px 20px; } .service-card i { font-size: 45px; } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <!-- Updated Header -->
     <header>
-        <div class="logo-section">InstaFix</div>
-        <a href="support.html" class="header-link">सपोर्ट</a>
+        <a href="index.html" class="logo-section">InstaFix</a>
+        <div class="header-links">
+            <a href="status.html">स्टेटस</a>
+            <a href="support.html">सपोर्ट</a>
+        </div>
     </header>
 
-    <!-- Services Grid with Coming Soon Badges -->
-    <div class="services-grid">
-        <!-- एक्टिव सर्विस: फर्नीचर -->
-        <div class="service-card active" onclick="selectService(this, 'Furniture')">
-            <i>🔨</i>
-            <div class="title">फर्नीचर</div>
-        </div>
-        
-        <!-- बाकी डिसेबल (Disabled) सर्विस -->
-        <div class="service-card disabled">
-            <div class="coming-soon-badge">Coming Soon</div>
-            <i>🚰</i>
-            <div class="title">प्लम्बर</div>
-        </div>
-
-        <div class="service-card disabled">
-            <div class="coming-soon-badge">Coming Soon</div>
-            <i>⚡</i>
-            <div class="title">बिजली</div>
-        </div>
-
-        <div class="service-card disabled">
-            <div class="coming-soon-badge">Coming Soon</div>
-            <i>❄️</i>
-            <div class="title">AC रिपेयर</div>
-        </div>
-
-        <div class="service-card disabled">
-            <div class="coming-soon-badge">Coming Soon</div>
-            <i>🎨</i>
-            <div class="title">पेंटिंग</div>
-        </div>
-
-        <div class="service-card disabled">
-            <div class="coming-soon-badge">Coming Soon</div>
-            <i>🧹</i>
-            <div class="title">सफाई</div>
-        </div>
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 20px; font-size: 22px;">अपनी सर्विस चुनें</h2>
+        <div id="loadingMsg">⏳ सर्विसेस लोड हो रही हैं...</div>
+        <div class="services-grid" id="servicesGrid"></div>
     </div>
-
-    <!-- Booking Form -->
-    <div class="booking-card">
-        <h2 id="form-title">फर्नीचर सेवा बुक करें</h2>
-        <form id="bookingForm">
-            <input type="hidden" id="selectedService" value="Furniture">
-            
-            <div class="form-group">
-                <label>आपका नाम *</label>
-                <input type="text" placeholder="पूरा नाम" required>
-            </div>
-            
-            <div class="form-group">
-                <label>मोबाइल नंबर *</label>
-                <input type="tel" placeholder="98XXXXXXXX" pattern="[0-9]{10}" required>
-            </div>
-            
-            <div class="form-group">
-                <label>काम का प्रकार *</label>
-                <select id="workType" required>
-                    <option value="मरम्मत">मरम्मत</option>
-                    <option value="पॉलिश">पॉलिश</option>
-                    <option value="नया बनवाना">नया बनवाना</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>पूरा पता *</label>
-                <textarea placeholder="घर नंबर, गली, इलाका, शहर " required></textarea>
-            </div>
-            
-            <button type="submit" class="submit-btn">🔧 बुक करें</button>
-        </form>
-    </div>
-</div>
 
 <script>
-    // चूँकि अभी सिर्फ फर्नीचर सर्विस लाइव है, बाकी पर क्लिक करने से कुछ नहीं होगा
-    // भविष्य में जब आप नई सर्विस चालू करेंगे, तब हम इसमें वापस JavaScript लॉजिक जोड़ देंगे।
-    
-    function selectService(el, service) {
-        // यह चेक करता है कि कार्ड डिसेबल तो नहीं है
-        if(el.classList.contains('disabled')) {
-            return;
-        }
+    // Firebase Configuration
+    const firebaseConfig = { apiKey: "AIzaSyAgLeGVoD-i2EmVtzZaYKNfVKELayJgqno", authDomain: "instafix-a2b64.firebaseapp.com", projectId: "instafix-a2b64", storageBucket: "instafix-a2b64.firebasestorage.app", messagingSenderId: "601923931749", appId: "1:601923931749:web:937f65656afcc0ab8d808c" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('selectedService').value = service;
+    const defaultServices = [
+        { id: 'furniture', name: 'फर्नीचर', icon: '🔨' },
+        { id: 'plumber', name: 'प्लम्बर', icon: '🚰' },
+        { id: 'electrician', name: 'बिजली', icon: '⚡' },
+        { id: 'ac', name: 'AC रिपेयर', icon: '❄️' },
+        { id: 'painting', name: 'पेंटिंग', icon: '🎨' },
+        { id: 'cleaning', name: 'सफाई', icon: '🧹' },
+        { id: 'civil', name: 'सिबिल वर्कर', icon: '🧱' }
+    ];
+
+    db.collection("appData").doc("serviceStatus").onSnapshot((doc) => {
+        document.getElementById('loadingMsg').style.display = 'none';
+        const servicesGrid = document.getElementById('servicesGrid');
+        servicesGrid.innerHTML = '';
         
-        // फॉर्म का टाइटल अपडेट करें
-        if(service === 'Furniture') {
-            document.getElementById('form-title').innerText = 'फर्नीचर सेवा बुक करें';
-        }
-    }
-</script>
+        // अगर डेटाबेस खाली है, तो डिफ़ॉल्ट मान लें
+        let statusData = doc.exists ? doc.data() : { furniture: true }; 
 
+        defaultServices.forEach(service => {
+            const card = document.createElement('div');
+            const isActive = statusData[service.id] === true;
+
+            if (isActive) {
+                card.className = 'service-card';
+                card.onclick = () => { window.location.href = `booking.html?s=${service.id}`; };
+                card.innerHTML = `<i>${service.icon}</i><div class="title">${service.name}</div>`;
+            } else {
+                card.className = 'service-card disabled';
+                card.innerHTML = `<div class="coming-soon-badge">Coming Soon</div><i>${service.icon}</i><div class="title">${service.name}</div>`;
+            }
+            servicesGrid.appendChild(card);
+        });
+    });
+</script>
 </body>
 </html>
