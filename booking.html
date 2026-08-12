@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InstaFix - Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs (Auth जोड़ा गया है) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
     <style>
-        /* (पुराना CSS यहाँ रखें, कोई बदलाव नहीं) */
         :root { --primary-color: #bf6a1f; --bg-color: #f4f4f4; --white: #ffffff; --text-dark: #222222; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Devanagari', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-dark); }
@@ -28,6 +31,11 @@
         .checkbox-group input { width: auto; margin-right: 8px; transform: scale(1.2); cursor: pointer;}
         .submit-btn { background-color: var(--primary-color); color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.3s;}
         .submit-btn:hover { background-color: #a35817; }
+        
+        /* OTP Section Styles */
+        .otp-section { display: none; background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffe0b2; margin-top: 20px;}
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
     </style>
 </head>
 <body>
@@ -48,7 +56,17 @@
                 <div class="form-group" id="dynamicFieldsContainer" style="display:none;"></div>
                 <div class="form-group"><label>पूरा पता (Address) *</label><textarea id="custAddress" rows="3" placeholder="मकान नं, गली, शहर..." required></textarea></div>
                 
-                <button type="submit" id="submitBtn" class="submit-btn">✅ कन्फर्म बुक करें</button>
+                <button type="submit" id="sendOtpBtn" class="submit-btn">📱 OTP भेजें</button>
+
+                <!-- OTP Box (Hidden Initially) -->
+                <div class="otp-section" id="otpSection">
+                    <label style="color:#d35400;">आपके नंबर पर 6 अंकों का OTP भेजा गया है</label>
+                    <input type="tel" id="otpInput" placeholder="यहाँ OTP डालें" maxlength="6" style="margin: 10px 0;">
+                    <button type="button" id="verifyOtpBtn" class="submit-btn btn-success" onclick="verifyOTP()">✅ OTP वेरीफाई कर बुकिंग कन्फर्म करें</button>
+                </div>
+
+                <!-- Invisible Recaptcha required by Firebase -->
+                <div id="recaptcha-container"></div>
             </form>
         </div>
     </div>
@@ -88,11 +106,59 @@
         else { container.innerHTML = ''; container.style.display = 'none'; }
     }
 
-    document.getElementById('bookingForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        document.getElementById('submitBtn').innerText = "⏳ बुक हो रहा है...";
-        document.getElementById('submitBtn').disabled = true;
+    // 🌟 Firebase OTP Variables & Recaptcha
+    let confirmationResultObj = null;
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
 
+    // Step 1: फॉर्म सबमिट करने पर OTP भेजा जाएगा (डेटाबेस में सेव नहीं होगा)
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        const phone = document.getElementById('custPhone').value;
+        const phoneNumber = "+91" + phone;
+        const btn = document.getElementById('sendOtpBtn');
+        
+        btn.innerText = "⏳ OTP भेज रहे हैं...";
+        btn.disabled = true;
+
+        firebase.auth().signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+            .then((confirmationResult) => {
+                confirmationResultObj = confirmationResult;
+                btn.style.display = 'none'; // सेंड बटन छुपा दें
+                document.getElementById('otpSection').style.display = 'block'; // OTP बॉक्स दिखाएँ
+                
+                // Form fields को लॉक कर दें ताकि यूज़र OTP भेजकर नंबर न बदल सके
+                document.getElementById('custName').disabled = true;
+                document.getElementById('custPhone').disabled = true;
+                document.getElementById('workCategory').disabled = true;
+                document.getElementById('custAddress').disabled = true;
+            }).catch((error) => {
+                alert("OTP भेजने में समस्या आई। सुनिश्चित करें कि Firebase में Phone Auth चालू है।\nएरर: " + error.message);
+                btn.innerText = "📱 OTP भेजें";
+                btn.disabled = false;
+            });
+    });
+
+    // Step 2: OTP वेरीफाई करना और बुकिंग को डेटाबेस में सेव करना
+    function verifyOTP() {
+        const code = document.getElementById('otpInput').value;
+        if(code.length !== 6) return alert("कृपया 6 अंकों का सही OTP डालें");
+        
+        const vBtn = document.getElementById('verifyOtpBtn');
+        vBtn.innerText = "⏳ वेरीफाई हो रहा है...";
+        vBtn.disabled = true;
+
+        confirmationResultObj.confirm(code).then((result) => {
+            // OTP सही है! अब डेटाबेस में सेव करें
+            saveBookingToDatabase();
+        }).catch((error) => {
+            alert("❌ गलत OTP दर्ज किया गया है।");
+            vBtn.innerText = "✅ OTP वेरीफाई कर बुकिंग कन्फर्म करें";
+            vBtn.disabled = false;
+        });
+    }
+
+    function saveBookingToDatabase() {
         let specificDetails = "";
         const extraText = document.getElementById('extraDetails');
         if(extraText && extraText.value) { specificDetails = extraText.value; } 
@@ -111,18 +177,20 @@
             address: document.getElementById('custAddress').value,
             status: 'Pending',
             date: new Date().toLocaleDateString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() // Online sorting
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         db.collection("bookings").add(newBooking).then(() => {
-            alert("✅ बुकिंग सफल रही! आपकी बुकिंग ID: " + newBooking.id);
+            let myDeviceBookings = JSON.parse(localStorage.getItem('myInstaFixBookings')) || [];
+            myDeviceBookings.push(newBooking.id);
+            localStorage.setItem('myInstaFixBookings', JSON.stringify(myDeviceBookings));
+
+            alert("✅ OTP वेरीफाई हो गया और बुकिंग सफल रही! आपकी बुकिंग ID: " + newBooking.id);
             window.location.href = 'status.html';
         }).catch((error) => {
-            alert("❌ एरर: बुकिंग सेव नहीं हो सकी। (शायद Firebase चालू नहीं है)");
-            document.getElementById('submitBtn').innerText = "✅ कन्फर्म बुक करें";
-            document.getElementById('submitBtn').disabled = false;
+            alert("❌ एरर: बुकिंग सेव नहीं हो सकी।");
         });
-    });
+    }
 </script>
 </body>
 </html>
