@@ -2,26 +2,93 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Status - InstaFix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
-        input { width: 100%; padding: 10px; margin: 10px 0; }
-        button { width: 100%; padding: 10px; background: #bf6a1f; color: white; border: none; border-radius: 5px; }
+        /* (पुराना CSS यहाँ रखें, कोई बदलाव नहीं) */
+        :root { --primary-color: #bf6a1f; --bg-color: #f4f4f4; --white: #ffffff; --text-dark: #222222; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Devanagari', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); }
+        header { background-color: var(--white); padding: 15px 5%; display: flex; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .back-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background-color: #f0f0f0; border-radius: 50%; text-decoration: none; color: var(--primary-color); margin-right: 15px; transition: 0.3s; }
+        .back-btn:hover { background-color: var(--primary-color); color: white; box-shadow: 0 2px 8px rgba(191, 106, 31, 0.4); }
+        .back-btn svg { width: 22px; height: 22px; fill: currentColor; }
+        .page-title { font-size: 20px; font-weight: 700; color: var(--text-dark); }
+        .container { max-width: 500px; margin: 40px auto; padding: 0 15px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 20px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; text-align: center;}
+        button { width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #a35817; }
+        .result-box { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; text-align: left; font-size: 15px;}
+        .status-Pending { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status-Progress { background: #cce5ff; color: #004085; border: 1px solid #b8daff; }
+        .status-Completed { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>अपना स्टेटस चेक करें</h2>
-        <input type="text" id="bookingId" placeholder="अपनी बुकिंग ID डालें (जैसे IF-2026-1001)">
-        <button onclick="checkStatus()">चेक करें</button>
-        <p id="result"></p>
+
+    <header>
+        <a href="index.html" class="back-btn" title="होम पर जाएँ">
+            <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </a>
+        <div class="page-title">स्टेटस चेक करें</div>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>🔍 अपनी बुकिंग ढूँढें</h2>
+            <p style="font-size:14px; color:#666; margin-top:10px;">बुकिंग के समय मिला <strong>IF-XXXX</strong> नंबर दर्ज करें।</p>
+            
+            <input type="text" id="bookingId" placeholder="उदा. IF-1234">
+            <button id="checkBtn" onclick="checkStatus()">स्टेटस चेक करें</button>
+            
+            <div id="result" class="result-box"></div>
+        </div>
     </div>
 
     <script>
+        const firebaseConfig = { apiKey: "AIzaSyAgLeGVoD-i2EmVtzZaYKNfVKELayJgqno", authDomain: "instafix-a2b64.firebaseapp.com", projectId: "instafix-a2b64", storageBucket: "instafix-a2b64.firebasestorage.app", messagingSenderId: "601923931749", appId: "1:601923931749:web:937f65656afcc0ab8d808c" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         function checkStatus() {
-            // यह एक सिंपल डेमो है। असली में हम यहाँ आपकी Google Sheet का लिंक लगा देंगे।
-            alert("हम अभी आपकी बुकिंग IF-2026-1001 को चेक कर रहे हैं... (आपका स्टेटस: 'काम जारी है')");
+            const inputId = document.getElementById('bookingId').value.trim().toUpperCase();
+            const resultBox = document.getElementById('result');
+            const btn = document.getElementById('checkBtn');
+
+            if(!inputId) { alert("कृपया ID डालें!"); return; }
+
+            btn.innerText = "⏳ ढूँढ रहे हैं...";
+            
+            db.collection("bookings").where("id", "==", inputId).get().then((querySnapshot) => {
+                btn.innerText = "स्टेटस चेक करें";
+                resultBox.style.display = 'block';
+
+                if (!querySnapshot.empty) {
+                    const booking = querySnapshot.docs[0].data();
+                    let statusClass = '', hindiStatus = '';
+                    if(booking.status === 'Pending') { statusClass = 'status-Pending'; hindiStatus = 'पेंडिंग (अभी शुरू नहीं हुआ)'; }
+                    else if(booking.status === 'In Progress') { statusClass = 'status-Progress'; hindiStatus = 'काम प्रगति पर है'; }
+                    else if(booking.status === 'Completed') { statusClass = 'status-Completed'; hindiStatus = 'काम पूरा हो गया है ✅'; }
+
+                    resultBox.className = 'result-box ' + statusClass;
+                    resultBox.innerHTML = `
+                        <strong>सर्विस:</strong> ${booking.service} (${booking.workCategory})<br>
+                        <strong>नाम:</strong> ${booking.name} <br>
+                        <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:15px 0;">
+                        <strong>स्टेटस:</strong> <span style="font-size:18px;">${hindiStatus}</span>
+                    `;
+                } else {
+                    resultBox.className = 'result-box status-Pending';
+                    resultBox.innerHTML = "❌ यह बुकिंग ID नहीं मिली। कृपया सही ID डालें।";
+                }
+            }).catch(error => {
+                btn.innerText = "स्टेटस चेक करें";
+                alert("सर्वर से कनेक्ट नहीं हो सका।");
+            });
         }
     </script>
 </body>
