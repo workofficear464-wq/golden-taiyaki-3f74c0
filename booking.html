@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaFix - Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        /* (पुराना CSS यहाँ रखें, कोई बदलाव नहीं) */
+        :root { --primary-color: #bf6a1f; --bg-color: #f4f4f4; --white: #ffffff; --text-dark: #222222; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Devanagari', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); }
+        header { background-color: var(--white); padding: 15px 5%; display: flex; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .back-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background-color: #f0f0f0; border-radius: 50%; text-decoration: none; color: var(--primary-color); margin-right: 15px; transition: 0.3s; }
+        .back-btn:hover { background-color: var(--primary-color); color: white; box-shadow: 0 2px 8px rgba(191, 106, 31, 0.4); }
+        .back-btn svg { width: 22px; height: 22px; fill: currentColor; }
+        .page-title { font-size: 20px; font-weight: 700; color: var(--text-dark); }
+        .container { max-width: 600px; margin: 30px auto; padding: 0 15px; }
+        .booking-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #444; }
+        input[type="text"], input[type="tel"], select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; outline: none; font-size: 15px; transition: 0.3s;}
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-color); background: white; box-shadow: 0 0 5px rgba(191,106,31,0.2); }
+        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #ddd;}
+        .checkbox-group label { font-weight: normal; font-size: 14px; display: flex; align-items: center; margin-bottom: 0; cursor: pointer;}
+        .checkbox-group input { width: auto; margin-right: 8px; transform: scale(1.2); cursor: pointer;}
+        .submit-btn { background-color: var(--primary-color); color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.3s;}
+        .submit-btn:hover { background-color: #a35817; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn" title="होम पर जाएँ">
+            <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </a>
+        <div class="page-title" id="pageTitle">लोड हो रहा है...</div>
+    </header>
+
+    <div class="container">
+        <div class="booking-card">
+            <form id="bookingForm">
+                <div class="form-group"><label>आपका नाम *</label><input type="text" id="custName" placeholder="अपना पूरा नाम लिखें" required></div>
+                <div class="form-group"><label>मोबाइल नंबर *</label><input type="tel" id="custPhone" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required></div>
+                <div class="form-group"><label>काम की श्रेणी *</label><select id="workCategory" onchange="updateDynamicFields()" required></select></div>
+                <div class="form-group" id="dynamicFieldsContainer" style="display:none;"></div>
+                <div class="form-group"><label>पूरा पता (Address) *</label><textarea id="custAddress" rows="3" placeholder="मकान नं, गली, शहर..." required></textarea></div>
+                
+                <button type="submit" id="submitBtn" class="submit-btn">✅ कन्फर्म बुक करें</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyAgLeGVoD-i2EmVtzZaYKNfVKELayJgqno", authDomain: "instafix-a2b64.firebaseapp.com", projectId: "instafix-a2b64", storageBucket: "instafix-a2b64.firebasestorage.app", messagingSenderId: "601923931749", appId: "1:601923931749:web:937f65656afcc0ab8d808c" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const serviceConfigs = {
+        'furniture': { name: 'फर्नीचर', categories: ['मरम्मत (Repair)', 'नया बनवाना (New)', 'पॉलिश (Polish)'], getDynamicFields: (cat) => { if(cat.includes('मरम्मत')) return `<label>मरम्मत का विवरण</label><textarea id="extraDetails" rows="2" placeholder="क्या समस्या है?"></textarea>`; else if(cat.includes('नया')) return `<label>क्या-क्या बनवाना है?</label><div class="checkbox-group"><label><input type="checkbox" name="multiSelect" value="बेड"> बेड</label><label><input type="checkbox" name="multiSelect" value="दीवान"> दीवान</label><label><input type="checkbox" name="multiSelect" value="सोफा"> सोफा</label><label><input type="checkbox" name="multiSelect" value="कुर्सी"> कुर्सी</label><label><input type="checkbox" name="multiSelect" value="दरवाजा"> दरवाजा</label><label><input type="checkbox" name="multiSelect" value="डायनिंग टेबल"> डायनिंग टेबल</label></div>`; return ''; } },
+        'plumber': { name: 'प्लम्बर', categories: ['लीकेज / मरम्मत', 'नया फिटिंग', 'टैंक सफाई'], getDynamicFields: () => `<label>समस्या का विवरण</label><textarea id="extraDetails" rows="2"></textarea>` },
+        'civil': { name: 'सिबिल वर्कर', categories: ['मरम्मत / प्लास्टर', 'नया निर्माण', 'टाइल्स / मार्बल'], getDynamicFields: () => `<label>काम का विवरण</label><textarea id="extraDetails" rows="2"></textarea>` },
+        'electrician': { name: 'बिजली (Electrician)', categories: ['वायरिंग', 'रिपेयरिंग', 'नया इंस्टालेशन'], getDynamicFields: () => `<label>क्या रिपेयर/इंस्टाल करना है?</label><textarea id="extraDetails" rows="2"></textarea>` },
+        'ac': { name: 'AC रिपेयर', categories: ['सर्विसिंग', 'गैस फिलिंग', 'इंस्टालेशन'], getDynamicFields: () => '' },
+        'painting': { name: 'पेंटिंग', categories: ['अंदर का पेंट', 'बाहर का पेंट', 'टेक्सचर'], getDynamicFields: () => '' },
+        'cleaning': { name: 'सफाई', categories: ['घर की सफाई', 'बाथरूम की सफाई', 'डीप क्लीनिंग'], getDynamicFields: () => '' }
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const serviceId = urlParams.get('s');
+    const currentService = serviceConfigs[serviceId];
+
+    if (!currentService) { window.location.href = 'index.html'; } 
+    else {
+        document.getElementById('pageTitle').innerText = currentService.name + " बुकिंग";
+        const catSelect = document.getElementById('workCategory');
+        catSelect.innerHTML = '<option value="">-- काम चुनें --</option>';
+        currentService.categories.forEach(cat => { catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
+    }
+
+    function updateDynamicFields() {
+        const cat = document.getElementById('workCategory').value;
+        const container = document.getElementById('dynamicFieldsContainer');
+        const html = currentService.getDynamicFields ? currentService.getDynamicFields(cat) : '';
+        if(html) { container.innerHTML = html; container.style.display = 'block'; } 
+        else { container.innerHTML = ''; container.style.display = 'none'; }
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        document.getElementById('submitBtn').innerText = "⏳ बुक हो रहा है...";
+        document.getElementById('submitBtn').disabled = true;
+
+        let specificDetails = "";
+        const extraText = document.getElementById('extraDetails');
+        if(extraText && extraText.value) { specificDetails = extraText.value; } 
+        else {
+            const checkboxes = document.querySelectorAll('input[name="multiSelect"]:checked');
+            if(checkboxes.length > 0) { specificDetails = Array.from(checkboxes).map(cb => cb.value).join(", "); }
+        }
+
+        const newBooking = {
+            id: 'IF-' + Math.floor(1000 + Math.random() * 9000),
+            service: currentService.name,
+            workCategory: document.getElementById('workCategory').value,
+            specificDetails: specificDetails || "N/A",
+            name: document.getElementById('custName').value,
+            phone: document.getElementById('custPhone').value,
+            address: document.getElementById('custAddress').value,
+            status: 'Pending',
+            date: new Date().toLocaleDateString(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // Online sorting
+        };
+
+        db.collection("bookings").add(newBooking).then(() => {
+            alert("✅ बुकिंग सफल रही! आपकी बुकिंग ID: " + newBooking.id);
+            window.location.href = 'status.html';
+        }).catch((error) => {
+            alert("❌ एरर: बुकिंग सेव नहीं हो सकी। (शायद Firebase चालू नहीं है)");
+            document.getElementById('submitBtn').innerText = "✅ कन्फर्म बुक करें";
+            document.getElementById('submitBtn').disabled = false;
+        });
+    });
+</script>
+</body>
+</html>
