@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Status - InstaFix</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 10px; background: #bf6a1f; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>अपना स्टेटस चेक करें</h2>
+        <input type="text" id="bookingId" placeholder="अपनी बुकिंग ID डालें (जैसे IF-2026-1001)">
+        <button onclick="checkStatus()">चेक करें</button>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        function checkStatus() {
+            // यह एक सिंपल डेमो है। असली में हम यहाँ आपकी Google Sheet का लिंक लगा देंगे।
+            alert("हम अभी आपकी बुकिंग IF-2026-1001 को चेक कर रहे हैं... (आपका स्टेटस: 'काम जारी है')");
+        }
+    </script>
+</body>
+</html>

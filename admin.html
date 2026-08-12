@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>InstaFix - Admin Panel</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
+        .admin-card { background: white; padding: 20px; border-radius: 12px; max-width: 900px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        
+        /* Table CSS */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background-color: #4a148c; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        select { padding: 5px; border-radius: 5px; }
+        .delete-btn { background: #e53935; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+        .delete-btn:hover { background: #c62828; }
+        
+        .no-data { text-align: center; color: #777; margin-top: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="admin-card">
+        <h2>Admin Panel - बुकिंग्स</h2>
+        <a href="index.html" style="text-decoration: none; color: #bf6a1f; font-weight: bold;">🏠 होम पेज पर जाएं</a>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>तारीख</th>
+                    <th>नाम</th>
+                    <th>मोबाइल नंबर</th>
+                    <th>काम का प्रकार</th>
+                    <th>पता</th>
+                    <th>स्टेटस बदलें</th>
+                    <th>एक्शन</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+                <!-- डेटा यहाँ JavaScript से आएगा -->
+            </tbody>
+        </table>
+        <div id="noDataMessage" class="no-data" style="display: none;">अभी कोई बुकिंग नहीं है।</div>
+    </div>
+
+    <script>
+        // एडमिन पासवर्ड चेक
+        function checkPassword() {
+            var password = prompt("एडमिन पासवर्ड दर्ज करें:");
+            if (password !== "1234") { 
+                alert("गलत पासवर्ड!");
+                window.location.href = "index.html"; 
+            } else {
+                loadBookings(); // पासवर्ड सही होने पर डेटा लोड करें
+            }
+        }
+
+        // लोकल स्टोरेज से बुकिंग्स लोड करना
+        function loadBookings() {
+            const bookings = JSON.parse(localStorage.getItem('instaFixBookings')) || [];
+            const tbody = document.getElementById('bookingsTableBody');
+            const noDataMsg = document.getElementById('noDataMessage');
+            
+            tbody.innerHTML = ''; // पुरानी टेबल साफ करें
+
+            if (bookings.length === 0) {
+                noDataMsg.style.display = 'block';
+                return;
+            } else {
+                noDataMsg.style.display = 'none';
+            }
+
+            bookings.forEach((booking, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${booking.id}</strong></td>
+                    <td>${booking.date}</td>
+                    <td>${booking.name}</td>
+                    <td>${booking.phone}</td>
+                    <td>${booking.service} (${booking.workType})</td>
+                    <td>${booking.address}</td>
+                    <td>
+                        <select onchange="updateStatus(${index}, this.value)">
+                            <option value="Pending" ${booking.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="In Progress" ${booking.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${booking.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </td>
+                    <td><button class="delete-btn" onclick="deleteBooking(${index})">Delete</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // स्टेटस अपडेट करना
+        function updateStatus(index, newStatus) {
+            let bookings = JSON.parse(localStorage.getItem('instaFixBookings'));
+            bookings[index].status = newStatus;
+            localStorage.setItem('instaFixBookings', JSON.stringify(bookings));
+        }
+
+        // बुकिंग डिलीट करना
+        function deleteBooking(index) {
+            if(confirm("क्या आप वाकई इस बुकिंग को हटाना चाहते हैं?")) {
+                let bookings = JSON.parse(localStorage.getItem('instaFixBookings'));
+                bookings.splice(index, 1);
+                localStorage.setItem('instaFixBookings', JSON.stringify(bookings));
+                loadBookings(); // टेबल को रीफ्रेश करें
+            }
+        }
+
+        // पेज लोड होने पर पासवर्ड पूछें
+        checkPassword();
+    </script>
+</body>
+</html>
