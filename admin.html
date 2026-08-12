@@ -3,86 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaFix - Home</title>
+    <title>Admin - InstaFix</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary-color: #bf6a1f; --bg-color: #f4f4f4; --white: #ffffff; --text-dark: #222222; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Devanagari', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-dark); }
-        header { background-color: var(--white); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .logo-section { font-size: 24px; font-weight: 700; color: var(--primary-color); text-decoration: none; }
-        .header-links a { color: #4a148c; text-decoration: none; font-size: 15px; font-weight: 600; margin-left: 15px; transition: 0.3s; }
-        .header-links a:hover { color: var(--primary-color); }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; margin-top: 20px; }
-        .service-card { background: white; padding: 25px 15px; border-radius: 12px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .service-card:hover:not(.disabled) { border-color: var(--primary-color); transform: translateY(-5px); box-shadow: 0 6px 15px rgba(191, 106, 31, 0.15); }
-        .service-card i { font-size: 35px; display: block; margin-bottom: 12px; }
-        .service-card .title { font-size: 15px; font-weight: 600; }
-        .service-card.disabled { cursor: not-allowed; background-color: #f9f9f9; opacity: 0.7; }
-        .coming-soon-badge { position: absolute; top: -10px; right: -5px; background-color: #e53935; color: white; font-size: 10px; font-weight: 700; padding: 5px 8px; border-radius: 20px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-transform: uppercase; }
-        #loadingMsg { text-align: center; margin-top: 50px; font-weight: bold; color: #555; }
-        @media (min-width: 768px) { .services-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 30px; } .service-card { padding: 35px 20px; } .service-card i { font-size: 45px; } }
+        body { background-color: var(--bg-color); color: var(--text-dark); padding: 15px; }
+        .admin-container { max-width: 1200px; margin: 0 auto; }
+        .admin-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #eee;}
+        h2 { color: #333; margin-bottom: 10px; font-size: 22px; }
+        .top-action-bar { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .btn-pro { flex: 1; text-align: center; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; text-decoration: none; border: none; color: white; display: inline-block; background-color: var(--primary-color); }
+        .table-responsive { width: 100%; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #ddd; }
+        .scroll-hint { display: block; font-size: 12px; color: #e53935; margin-bottom: 10px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background-color: #4a148c; color: white; }
+        tr:hover { background-color: #f9f9f9; }
+        select { padding: 6px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px;}
+        .action-btns { display: flex; gap: 8px; align-items: center; }
+        .delete-btn { background: #e53935; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
+        .wa-btn { background: #25D366; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 13px; display: inline-block; }
+        .toggle-btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; min-width: 110px; }
+        .btn-active { background: #4CAF50; color: white; } 
+        .btn-inactive { background: #f44336; color: white; }
+        .no-data { text-align: center; color: #777; margin-top: 20px; font-style: italic; }
+        #loadingData { text-align: center; color: var(--primary-color); font-weight: bold; padding: 20px; }
     </style>
 </head>
 <body>
-
-    <header>
-        <a href="index.html" class="logo-section">InstaFix</a>
-        <div class="header-links">
-            <a href="status.html">स्टेटस</a>
-            <a href="support.html">सपोर्ट</a>
+    <div class="admin-container">
+        <div class="top-action-bar">
+            <a href="index.html" class="btn-pro">🏠 वापस होम पेज पर जाएँ</a>
         </div>
-    </header>
 
-    <div class="container">
-        <h2 style="text-align: center; margin-bottom: 20px; font-size: 22px;">अपनी सर्विस चुनें</h2>
-        <div id="loadingMsg">⏳ सर्विसेस लोड हो रही हैं...</div>
-        <div class="services-grid" id="servicesGrid"></div>
+        <div id="loadingData">⏳ डेटाबेस से कनेक्ट हो रहा है...</div>
+
+        <div class="admin-card" id="adminContent" style="display:none;">
+            <h2>🛠️ सर्विस मैनेजमेंट (Online)</h2>
+            <span class="scroll-hint">👉 टेबल को देखने के लिए दाएँ स्वाइप करें</span>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr><th>आइकन</th><th>सर्विस</th><th>स्टेटस</th><th>एक्शन</th></tr></thead>
+                    <tbody id="servicesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card" id="bookingsContent" style="display:none;">
+            <h2>📋 ग्राहकों की बुकिंग्स (Live)</h2>
+            <span class="scroll-hint">👉 टेबल को देखने के लिए दाएँ स्वाइप करें</span>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>बुकिंग ID</th>
+                            <th>ग्राहक विवरण</th>
+                            <th>सर्विस</th>
+                            <th>विवरण (Items)</th>
+                            <th>पता</th>
+                            <th>स्टेटस बदलें</th>
+                            <th>एक्शन</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsTableBody"></tbody>
+                </table>
+            </div>
+            <div id="noDataMessage" class="no-data" style="display: none;">अभी कोई बुकिंग नहीं है।</div>
+        </div>
     </div>
 
-<script>
-    // Firebase Configuration
-    const firebaseConfig = { apiKey: "AIzaSyAgLeGVoD-i2EmVtzZaYKNfVKELayJgqno", authDomain: "instafix-a2b64.firebaseapp.com", projectId: "instafix-a2b64", storageBucket: "instafix-a2b64.firebasestorage.app", messagingSenderId: "601923931749", appId: "1:601923931749:web:937f65656afcc0ab8d808c" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyAgLeGVoD-i2EmVtzZaYKNfVKELayJgqno", authDomain: "instafix-a2b64.firebaseapp.com", projectId: "instafix-a2b64", storageBucket: "instafix-a2b64.firebasestorage.app", messagingSenderId: "601923931749", appId: "1:601923931749:web:937f65656afcc0ab8d808c" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    const defaultServices = [
-        { id: 'furniture', name: 'फर्नीचर', icon: '🔨' },
-        { id: 'plumber', name: 'प्लम्बर', icon: '🚰' },
-        { id: 'electrician', name: 'बिजली', icon: '⚡' },
-        { id: 'ac', name: 'AC रिपेयर', icon: '❄️' },
-        { id: 'painting', name: 'पेंटिंग', icon: '🎨' },
-        { id: 'cleaning', name: 'सफाई', icon: '🧹' },
-        { id: 'civil', name: 'सिबिल वर्कर', icon: '🧱' }
-    ];
+        const defaultServices = [
+            { id: 'furniture', name: 'फर्नीचर', icon: '🔨' },
+            { id: 'plumber', name: 'प्लम्बर', icon: '🚰' },
+            { id: 'electrician', name: 'बिजली', icon: '⚡' },
+            { id: 'ac', name: 'AC रिपेयर', icon: '❄️' },
+            { id: 'painting', name: 'पेंटिंग', icon: '🎨' },
+            { id: 'cleaning', name: 'सफाई', icon: '🧹' },
+            { id: 'civil', name: 'सिबिल वर्कर', icon: '🧱' }
+        ];
 
-    db.collection("appData").doc("serviceStatus").onSnapshot((doc) => {
-        document.getElementById('loadingMsg').style.display = 'none';
-        const servicesGrid = document.getElementById('servicesGrid');
-        servicesGrid.innerHTML = '';
-        
-        // अगर डेटाबेस खाली है, तो डिफ़ॉल्ट मान लें
-        let statusData = doc.exists ? doc.data() : { furniture: true }; 
+        let currentServiceStatus = {};
 
-        defaultServices.forEach(service => {
-            const card = document.createElement('div');
-            const isActive = statusData[service.id] === true;
+        function initAdmin() {
+            document.getElementById('loadingData').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            document.getElementById('bookingsContent').style.display = 'block';
 
-            if (isActive) {
-                card.className = 'service-card';
-                card.onclick = () => { window.location.href = `booking.html?s=${service.id}`; };
-                card.innerHTML = `<i>${service.icon}</i><div class="title">${service.name}</div>`;
-            } else {
-                card.className = 'service-card disabled';
-                card.innerHTML = `<div class="coming-soon-badge">Coming Soon</div><i>${service.icon}</i><div class="title">${service.name}</div>`;
+            // 1. Live Services Listener
+            db.collection("appData").doc("serviceStatus").onSnapshot((doc) => {
+                if (doc.exists) {
+                    currentServiceStatus = doc.data();
+                } else {
+                    currentServiceStatus = { furniture: true, plumber: false, electrician: false, ac: false, painting: false, cleaning: false, civil: false };
+                    db.collection("appData").doc("serviceStatus").set(currentServiceStatus);
+                }
+                renderServices();
+            });
+
+            // 2. Live Bookings Listener
+            db.collection("bookings").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+                const tbody = document.getElementById('bookingsTableBody');
+                const noDataMsg = document.getElementById('noDataMessage');
+                tbody.innerHTML = ''; 
+
+                if (snapshot.empty) { noDataMsg.style.display = 'block'; return; } 
+                else { noDataMsg.style.display = 'none'; }
+
+                snapshot.forEach((doc) => {
+                    const booking = doc.data();
+                    const docId = doc.id; // Firebase ID
+
+                    let phoneNum = booking.phone.replace(/[^0-9]/g, '');
+                    if(phoneNum.length === 10) { phoneNum = '91' + phoneNum; }
+                    const waMessage = `नमस्ते ${booking.name}, 🛠️ InstaFix में आपकी बुकिंग प्राप्त हो गई है।\n\n📌 *आपकी बुकिंग ID: ${booking.id} है।*\n\nहम जल्द ही आपसे संपर्क करेंगे। धन्यवाद!`;
+                    const waLink = `https://wa.me/${phoneNum}?text=${encodeURIComponent(waMessage)}`;
+
+                    tbody.innerHTML += `<tr>
+                        <td><strong>${booking.id}</strong><br><small style="color:#777;">${booking.date}</small></td>
+                        <td>${booking.name}<br>📞 <a href="tel:${booking.phone}">${booking.phone}</a></td>
+                        <td><strong>${booking.service}</strong><br><span style="color:#555;">(${booking.workCategory})</span></td>
+                        <td style="color:#d32f2f; font-weight:500;">${booking.specificDetails}</td>
+                        <td>${booking.address}</td>
+                        <td>
+                            <select onchange="updateStatus('${docId}', this.value)">
+                                <option value="Pending" ${booking.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${booking.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${booking.status === 'Completed' ? 'selected' : ''}>Completed ✅</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="${waLink}" target="_blank" class="wa-btn">💬 WhatsApp</a>
+                                <button class="delete-btn" onclick="deleteBooking('${docId}')">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+            });
+        }
+
+        function renderServices() {
+            const tbody = document.getElementById('servicesTableBody');
+            tbody.innerHTML = '';
+            defaultServices.forEach((service) => {
+                const isActive = currentServiceStatus[service.id] === true;
+                const statusText = isActive ? '<span style="color:green; font-weight:bold;">चालू है</span>' : '<span style="color:red; font-weight:bold;">बंद है</span>';
+                const btnClass = isActive ? 'btn-inactive' : 'btn-active';
+                const btnText = isActive ? '❌ बंद करें' : '✅ चालू करें';
+
+                tbody.innerHTML += `<tr>
+                    <td style="font-size:24px; text-align:center;">${service.icon}</td>
+                    <td><strong>${service.name}</strong></td>
+                    <td>${statusText}</td>
+                    <td><button class="toggle-btn ${btnClass}" onclick="toggleService('${service.id}', ${isActive})">${btnText}</button></td>
+                </tr>`;
+            });
+        }
+
+        function toggleService(serviceId, currentStatus) {
+            db.collection("appData").doc("serviceStatus").update({
+                [serviceId]: !currentStatus
+            });
+        }
+
+        function updateStatus(docId, newStatus) {
+            db.collection("bookings").doc(docId).update({ status: newStatus });
+        }
+
+        function deleteBooking(docId) {
+            if(confirm("क्या आप वाकई इस बुकिंग को हटाना चाहते हैं?")) {
+                db.collection("bookings").doc(docId).delete();
             }
-            servicesGrid.appendChild(card);
-        });
-    });
-</script>
+        }
+
+        var password = prompt("एडमिन पासवर्ड दर्ज करें:");
+        if (password !== "1234") { 
+            alert("गलत पासवर्ड!"); window.location.href = "index.html"; 
+        } else { initAdmin(); }
+
+    </script>
 </body>
 </html>
